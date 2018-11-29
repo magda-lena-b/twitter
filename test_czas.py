@@ -26,17 +26,29 @@ api = tweepy.API(auth, wait_on_rate_limit_notify = True, wait_on_rate_limit=True
 
 t = tweepy.Cursor(api.search,q='knf -filter:retweets',lang='pl', tweet_mode='extended').items(1000)
 
-#####################################
-## dataframe na wyniki
-
 pd_s = pd.Series(['' for i in range(1,1001)])
+
 tw_df=pd.concat([pd_s, pd_s], axis=1)
 tw_df.columns = ['tw_text', 'tw_location']
 
 
-#####################################
-## ładowanie danych
+tw_df=pd.DataFrame(columns=['tw_text', 'tw_loc'])
 
+
+i=0
+time_start = datetime.datetime.now()
+for tw in t:
+    tw_df=tw_df.append(pd.DataFrame([[tw.full_text , tw.user.location]], columns=['tw_text', 'tw_loc']))
+    i+=1
+    if i % 100 ==0:
+        print(i, " at ", datetime.datetime.now())
+        
+
+time_stop = datetime.datetime.now()
+print('Total time: ', time_stop-time_start)
+#Total time:  0:00:31.826828
+
+## inaczej
 i=0
 time_start = datetime.datetime.now()
 for tw in t:
@@ -45,8 +57,10 @@ for tw in t:
     i+=1
     if i % 100 ==0:
         print(i, " at ", datetime.datetime.now())
+        
 
-print('Total time: ', datetime.datetime.now()-time_start)
+time_stop = datetime.datetime.now()
+print('Total time: ', time_stop-time_start)
 #Total time:  0:00:27.975456
 
 
