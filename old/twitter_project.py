@@ -24,15 +24,13 @@ auth.set_access_token(access_token, access_secret)
 api = tweepy.API(auth, wait_on_rate_limit_notify = True, wait_on_rate_limit=True)
 
 
-t = tweepy.Cursor(api.search,q='knf -filter:retweets',lang='pl', tweet_mode='extended').items(10000)
+t = tweepy.Cursor(api.search,q='knf -filter:retweets',lang='pl', tweet_mode='extended').items(10)
 
 #####################################
 ## dataframe na wyniki
 
-pd_s = pd.Series(['' for i in range(1,10001)])
-tw_df=pd.concat([pd_s, pd_s], axis=1)
-tw_df.columns = ['tw_text', 'tw_location']
 
+tw_df = pd.DataFrame(index=range(10), columns=['tw_text', 'location', 'user_id', 'user_name', 'fav_cnt','friends_cnt', 'foll_cnt'])
 
 #####################################
 ## ładowanie danych
@@ -40,8 +38,7 @@ tw_df.columns = ['tw_text', 'tw_location']
 i=0
 time_start = datetime.datetime.now()
 for tw in t:
-    tw_df.iloc[i][0]=tw.full_text
-    tw_df.iloc[i][1]=tw.user.location
+    tw_df.iloc[i]=[tw.full_text, tw.user.location, tw.user.id, tw.user.name, tw.user.favourites_count, tw.user.friends_count, tw.user.followers_count]
     i+=1
     if i % 100 ==0:
         print(i, " at ", datetime.datetime.now())
@@ -60,3 +57,10 @@ with open('tweets.pickle','wb') as f:
 
 #Total time:  0:00:23.923916
 
+
+
+#### testowanie info o lokalizacji
+                
+u = api.get_user(id=174228069)
+dir(u)
+u.favourites_count
