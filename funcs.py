@@ -65,17 +65,16 @@ def load_tweets(api, query, number):
 
 def get_state(location):
     """ gets state info for location """
-    
+    #print(location)
     location = re.sub('\W', ' ',location)
     conf = {'format': 'json', 'addressdetails': 1, 'limit' : 1, 'q': location}
     loc_data = requests.get('http://nominatim.openstreetmap.org', params=conf).json()
-    print(len(loc_data))
-    if len(loc_data)==0:
+    if ((len(loc_data)==0) & (len(location.split())>0)):
         conf = {'format': 'json', 'addressdetails': 1, 'limit' : 1, 'q': location.split()[0]}
         loc_data = requests.get('http://nominatim.openstreetmap.org', params=conf).json()
             
         if len(loc_data)==0:
-            raise Exception('Couldn\'t get location for {}'.format(location))
+            print('Couldn\'t get location for {}'.format(location))
             return None
 
     try:
@@ -88,6 +87,9 @@ def get_state(location):
         return None
     
     return state
+
+
+
 
 #ap = set_api('tw_auth.csv')
 #all_t = load_tweets(ap, ' ', 10000)
