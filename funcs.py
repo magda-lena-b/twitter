@@ -10,8 +10,8 @@ import datetime
 import pandas as pd
 import requests
 import re
-
-
+import geopandas as gpd
+import matplotlib as plt
 
 
 def set_api(auth_file):
@@ -28,9 +28,16 @@ def set_api(auth_file):
 
 
 
-def load_tweets(api, query, number):
+def load_tweets(api, query = " ", number= 100, with_loc = 1):
     """ downloads given number of tweets with given subject """
-
+    
+    """
+    api - tweepy.API
+    query - string to search
+    number - maximum number of tweets to download
+    with_loc - when set to 1 will omitt tweets without author's location or with one that is listed in bad_locs list
+    
+    """
     
     t = tweepy.Cursor(api.search,q=query+' -filter:retweets',lang='pl', tweet_mode='extended').items(number)
     
@@ -43,18 +50,25 @@ def load_tweets(api, query, number):
     time_start = datetime.datetime.now()
     
     for tw in t:
-        if tw.user.location.lower() not in bad_locs:
+        if (tw.user.location.lower() in bad_locs and with_loc==1):
+            pass
+        else:
             tw_df.iloc[i]=[tw.full_text, tw.user.location, tw.user.id, tw.user.name, tw.user.favourites_count, tw.user.friends_count, tw.user.followers_count]
         i+=1
         if i % 500 ==0:
             print(i, " at ", datetime.datetime.now())
 
     #   dumps a pickle        
-    tw_df = tw_df[tw_df['location']!='']
+    tw_df = tw_df[tw_df['location']!=''].dropna()
     with open(query+'_tweets.pickle','wb') as f:
         pickle.dump(tw_df,f)
+    
+    if with_loc==1:
+        r = ' with author\'s location'
+    else:
+        r=''
         
-    print('Got {} tweets about "{}" with author\'s location'.format(len(tw_df), query))
+    print('Got {} tweets about "{}{}'.format(len(tw_df), query, r))
     print('Total time: ', datetime.datetime.now()-time_start)
     return tw_df
 
@@ -64,7 +78,7 @@ def load_tweets(api, query, number):
 
 
 def get_state(location):
-    """ gets state info for location """
+    """ gets state info for location from openstreetmap"""
     #print(location)
     location = re.sub('\W', ' ',location)
     conf = {'format': 'json', 'addressdetails': 1, 'limit' : 1, 'q': location}
@@ -90,6 +104,14 @@ def get_state(location):
 
 
 
-
+def basic_map(plot_data, column, title='', cmap = 'Blues'):
+    """ very simple map plotting """
+    assert(isinstance(plot_data, gpd.GeoDataFrame)), "Data needs to be a GeoDataFrame"
+    fig, ax = plt.subplots(1, figsize=(8, 8))
+    plot_data.plot(ax = ax, linewidth=0.5, edgecolor='0.4', column=column, cmap=cmap, legend=True, scheme='quantiles')
+    ax.set_title(title, fontdict={'fontsize': 20}, loc='left')
+    ax.get_legend().set_bbox_to_anchor((.2, .3))
+    ax.axis('off')
+    
 #ap = set_api('tw_auth.csv')
 #all_t = load_tweets(ap, ' ', 10000)
